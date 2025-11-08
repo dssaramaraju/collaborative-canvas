@@ -4,6 +4,24 @@
 A multi-user drawing app built with **Vanilla JS + HTML5 Canvas** on the frontend and **Node.js + Socket.io** on the backend.  
 Supports **real-time sync**, **user cursors**, **brush/eraser**, and **global undo/redo** via an operation log.
 
+🔗 **App URL:**  
+👉 [https://collaborative-canvas-sa26.onrender.com](https://collaborative-canvas-sa26.onrender.com)
+
+🧩 **GitHub Repository:**  
+👉 [https://github.com/dssaramaraju/collaborative-canvas](https://github.com/dssaramaraju/collaborative-canvas)
+
+---
+
+## 🧪 How to Test (Multi-User)
+
+1. Open **two tabs** (or browsers):
+   - [https://collaborative-canvas-sa26.onrender.com/?name=Alice&room=demo](https://collaborative-canvas-sa26.onrender.com/?name=Alice&room=demo)
+   - [https://collaborative-canvas-sa26.onrender.com/?name=Bob&room=demo](https://collaborative-canvas-sa26.onrender.com/?name=Bob&room=demo)
+2. Draw in one tab → see it appear **live** in the other.
+3. Use **eraser**, change **color/width**, and try **Undo/Redo** — actions sync globally.
+4. Watch **user cursors** move in real time with each connected participant.
+
+   
 ## ✨ Features
 - Brush & eraser, colors, stroke width
 - Real-time drawing sync (client-side prediction + server ordering)
