@@ -52,87 +52,98 @@ npm start
 # App runs at http://localhost:3000/?name=Alice&room=demo
 Open another tab with:
 
-ruby
 Copy code
 http://localhost:3000/?name=Bob&room=demo
-🧱 Project Structure
-pgsql
-Copy code
+
+---
+
+## 🧱 Project Structure
+
 collaborative-canvas/
 ├── client/
-│   ├── index.html
-│   ├── style.css
-│   ├── main.js
-│   ├── canvas.js         # Canvas drawing, cursors, preview rendering
-│   └── websocket.js      # Socket.io client connections
+│ ├── index.html
+│ ├── style.css
+│ ├── main.js
+│ ├── canvas.js # Canvas drawing, cursors, preview rendering
+│ └── websocket.js # Socket.io client connections
 ├── server/
-│   ├── server.js         # Express + Socket.io backend
-│   ├── rooms.js          # Room and user session management
-│   └── drawing-state.js  # Operation log, undo/redo state
+│ ├── server.js # Express + Socket.io backend
+│ ├── rooms.js # Room and user session management
+│ └── drawing-state.js # Operation log, undo/redo state
 ├── package.json
 ├── Procfile
 ├── .gitignore
 ├── README.md
 └── ARCHITECTURE.md
-🧠 Architecture Overview
-Client → Server → Broadcast Flow
 
-mathematica
-Copy code
+---
+
+## 🧠 Architecture Overview
+
+**Client → Server → Broadcast Flow**
+
 User Input → Canvas.js → WebSocket.js → Socket.io → Server.js → Broadcast → Other Clients → Canvas Update
-Client: Sends drawing actions in small point batches
 
-Server: Assigns global operation order
 
-All Clients: Apply operations in same order to ensure identical canvas states
+- **Client:** Sends drawing actions in small point batches  
+- **Server:** Assigns global operation order and updates an operation log  
+- **All Clients:** Apply operations in the same order to render an identical canvas
 
-Full architecture explained in:
-📄 ARCHITECTURE.md
+➡️ Full details: see **[ARCHITECTURE.md](./ARCHITECTURE.md)**
 
-🌐 Deployment
-✅ Render (Recommended)
-Push your repo to GitHub
+---
 
-Create a new Web Service on Render.com
+## 🌐 Deployment
 
-Build command: npm install
+### ✅ Render (Recommended)
+1. Push your repo to GitHub  
+2. Create a new **Web Service** on [Render](https://render.com)  
+3. **Build command:** `npm install`  
+4. **Start command:** `node server/server.js`  
+5. Open your live URL (e.g., `https://your-app.onrender.com`)
 
-Start command: npm start
+### ☁️ Heroku (Alternative)
 
-Visit your live URL (e.g., https://your-app.onrender.com)
-
-☁️ Heroku (Alternative)
-css
-Copy code
 heroku create
 git push heroku main
-Procfile is already included for Heroku deployment.
 
-⚡ Performance Highlights
-Batched Point Streaming: reduces network traffic
 
-Local Prediction: immediate visual feedback, reconciled on server confirmation
+> *A `Procfile` is included for Heroku deployment.*
 
-Offscreen Canvas: fast full redraw for undo/redo
+---
 
-Throttled Cursor Updates: ~60fps max with requestAnimationFrame
+## ⚡ Performance Highlights
 
-⚠️ Known Limitations
-In-memory state (resets on server restart)
+- **Batched point streaming** to reduce network chatter  
+- **Local prediction** for instant visual feedback (reconciled on server ack)  
+- **Offscreen canvas** for fast full redraws during undo/redo  
+- **RAF-throttled cursor updates** (≈60fps cap)
 
-Full canvas redraw on undo/redo (fine for demo scale)
+---
 
-Minimal latency compensation (client-first rendering)
+## ⚠️ Known Limitations
 
-🕒 Time Spent (Approx.)
-Task	Time
-Architecture & Design	2 hrs
-Core Implementation	6 hrs
-Testing & Debugging	2 hrs
-Documentation & Deployment	1 hr
-Total	~11 hrs
+- In-memory state (resets on server restart)  
+- Global Undo/Redo (by design for this assignment)  
+- Full canvas redraw on undo/redo (fine for demo scale)  
+- Minimal latency compensation (client-first rendering)
 
-👤 Author
-D S S A Ramaraju
-🎨 Real-time Collaborative Drawing Canvas Demo → Live App
-💻 GitHub → dssaramaraju/collaborative-canvas
+---
+
+## 🕒 Time Spent (Approx.)
+
+| Task | Time |
+|------|------|
+| Architecture & Design | 2 hrs |
+| Core Implementation | 6 hrs |
+| Testing & Debugging | 2 hrs |
+| Documentation & Deployment | 1 hr |
+| **Total** | **~11 hrs** |
+
+---
+
+## 👤 Author
+
+**D S S A Ramaraju**  
+🎨 Live Demo → https://collaborative-canvas-sa26.onrender.com 
+💻 GitHub → https://github.com/dssaramaraju/collaborative-canvas
