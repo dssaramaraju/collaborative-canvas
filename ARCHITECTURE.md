@@ -1,70 +1,80 @@
+# 🧱 ARCHITECTURE.md  
+## Real-Time Collaborative Drawing Canvas
 
-# ARCHITECTURE
+---
 
-## 1) Data Flow Diagram (High-level)
+## 📋 Overview
 
-```
-[Pointer/Touch Events]
-        |
-        v
-   Canvas (client) --(batched point segments)--> Socket.io <---> Server (operation log)
-        |                                                     |
-        '--- local preview -----------------------------------'
-        |
-        '--- on server ack/broadcast --> apply op in order --> Re-render
-```
+This document explains the architecture, data flow, WebSocket protocol, undo/redo logic, and performance considerations behind the **Real-Time Collaborative Drawing Canvas** project.  
 
-- Clients **locally predict** strokes for instant feedback.
-- Server assigns a **monotonic sequence id** per operation, ensuring global order.
-- All clients apply operations **in the same order** for consistency.
+The goal is to enable **multiple users** to draw simultaneously on a shared HTML5 canvas with **real-time synchronization**, **consistent state**, and **smooth user experience** — all built using **Vanilla JavaScript + Node.js + Socket.io**.
 
-## 2) WebSocket Protocol
+---
 
-**Events from Client → Server**
-- `cursor:move` `{ x, y }` (throttled)
-- `stroke:start` `{ tempId, color, width, mode }`
-- `stroke:segment` `{ tempId, points: [{x,y,t}, ...] }` (batched)
-- `stroke:end` `{ tempId }`
-- `history:undo` (no payload; server undoes latest non-undone op)
-- `history:redo` (no payload; server redoes latest undone op)
+## 🏗️ System Architecture
 
-**Events from Server → Client**
-- `init` `{ userId, room, users: [...], ops: [...], seq }`
-- `user:join` `{ userId, name, color }`
-- `user:leave` `{ userId }`
-- `cursor:move` `{ userId, x, y }`
-- `op:apply` `{ op }`          # apply an operation
-- `op:reconcile` `{ tempId, opId, seq }` # (optional) link temp stroke to official op
-- `history:undo` `{ opId }`
-- `history:redo` `{ opId }`
+### **High-Level Flow**
 
-## 3) Undo/Redo Strategy (Global)
+┌─────────────┐ ┌───────────────┐ ┌─────────────┐
+│ Client A │◄──────►│ WebSocket │◄──────►│ Client B │
+│ (Browser) │ │ Server (Node)│ │ (Browser) │
+└─────────────┘ └───────────────┘ └─────────────┘
+│ │ │
+└──── canvas events ─────┴──── broadcast ops ─────┘
 
-- Server maintains a **stack-like log** of operations: `ops[]`
-- An op is one of:
-  - `stroke` (draw) with polyline points
-  - `erase` (eraser strokes use `mode='erase'` and `globalCompositeOperation='destination-out'`)
-- `undo` finds the **latest applied** op and marks it `undone=true`.
-- `redo` finds the latest undone op and marks it `undone=false`.
-- Clients **re-render** from the operation log (skipping undone ops).
-- Ordering ensures global consistency regardless of author.
 
-## 4) Performance Decisions
+1. **Clients** capture drawing actions locally (brush, eraser, etc.).  
+2. **Socket.io** transmits stroke data (`stroke:start`, `stroke:segment`, `stroke:end`) in real time.  
+3. **Server** receives, timestamps, and rebroadcasts events to all clients in the same **room**.  
+4. Each client updates their local canvas using the received stroke data.  
+5. Global undo/redo and full redraws use a shared operation log to keep state consistent.
 
-- **Batching**: Points sent in segments (e.g., every 16ms or when buffer > N points).
-- **Local Prediction**: Draw immediately, then reconcile when server confirms `opId`.
-- **Redraw Policy**: Incremental render while drawing; full re-render only on undo/redo to keep logic simple and robust.
-- **Cursors**: Throttled with `requestAnimationFrame` to ~60Hz max.
+---
 
-## 5) Conflict Resolution (Overlapping Areas)
+## 🔄 Data Flow Diagram
 
-- Deterministic order via server sequence; later ops appear on top.
-- Eraser is compositing-based; it removes pixels from current buffer without special merging logic.
-- Because order is consistent, all clients converge on the same bitmap.
+User Input → Canvas.js → WebSocket.js → Socket.io → Server.js → Broadcast → Other Clients → Canvas Update
 
-## 6) Scaling Notes (Beyond MVP)
 
-- Persist ops to Redis/Postgres; load ops on join.
-- Backpressure + rate limiting per room for abusive clients.
-- Use **rooms** in Socket.io for isolation; sharded Node instances.
-- Consider **tiles** + **dirty rectangles** to avoid full-canvas redraws on heavy history.
+1. **User Input** – Mouse/touch events are captured (`mousedown`, `mousemove`, `mouseup`).  
+2. **Canvas.js** – Builds a stroke object `{ color, width, mode, points[] }`.  
+3. **WebSocket.js** – Emits serialized stroke segments over the socket.  
+4. **Server.js** – Validates, timestamps, and adds to global operation log.  
+5. **Broadcast** – Sends stroke events to all clients in the same room.  
+6. **Clients** – Draw incrementally or perform a full redraw if needed.  
+
+---
+
+## 📡 WebSocket Protocol
+
+### **Outgoing (Client → Server)**
+
+| Event | Payload | Description |
+|--------|----------|-------------|
+| `stroke:start` | `{ tempId, color, width, mode }` | Begins a new stroke |
+| `stroke:segment` | `{ tempId, points[] }` | Sends stroke segments (batched points) |
+| `stroke:end` | `{ tempId }` | Finalizes the stroke |
+| `cursor:move` | `{ x, y }` | Sends live cursor position |
+| `history:undo` | none | Request to undo last operation |
+| `history:redo` | none | Request to redo undone operation |
+
+### **Incoming (Server → Client)**
+
+| Event | Payload | Description |
+|--------|----------|-------------|
+| `init` | `{ userId, ops[] }` | Sends initial canvas state |
+| `op:apply` | `{ op }` | Broadcasts new operation (stroke, undo, redo) |
+| `cursor:update` | `{ userId, pos }` | Updates user cursor positions |
+| `user:join` / `user:leave` | `{ userId }` | Notifies room of user changes |
+
+---
+
+## 🧮 Data Structures
+
+### **Operation Log (Server)**
+```js
+[
+  { id: 1, type: 'stroke', user: 'Alice', points: [...], color: '#ff0000', undone: false },
+  { id: 2, type: 'stroke', user: 'Bob', points: [...], color: '#00ff00', undone: false },
+  { id: 3, type: 'undo', targetId: 1 },
+]
