@@ -1,0 +1,43 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Collaborative Canvas</title>
+  <link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+  <header>
+    <h1>Collaborative Canvas</h1>
+    <div id="user-info"></div>
+    <div class="toolbar">
+      <label>Tool:
+        <select id="tool">
+          <option value="brush">Brush</option>
+          <option value="eraser">Eraser</option>
+        </select>
+      </label>
+      <label>Color: <input type="color" id="color" value="#e74c3c"/></label>
+      <label>Width: <input type="range" id="width" min="1" max="40" value="6"/></label>
+      <button id="undo">Undo</button>
+      <button id="redo">Redo</button>
+    </div>
+  </header>
+<main>
+  <div style="position:relative;">
+    <canvas id="canvas" width="1200" height="700" style="width:100%;height:auto;"></canvas>
+    <!-- Add this overlay div if missing -->
+    <div id="cursors-layer" style="position:absolute;inset:0;pointer-events:none;"></div>
+  </div>
+  <div id="users"></div>
+</main>
+  <footer>
+    <span>Room: <span id="room"></span></span>
+    <span> | Tip: Open this URL in two tabs to test real-time sync.</span>
+  </footer>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
